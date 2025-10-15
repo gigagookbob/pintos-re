@@ -1,0 +1,160 @@
+{
+    // ==================================
+    // 에디터 기본 설정
+    // ==================================
+    "editor.fontSize": 13,
+    "editor.tabSize": 2,
+    // "editor.wordWrap": "on", // 긴 줄 자동 줄바꿈
+    // ==================================
+    // 파일 관리 및 저장 설정
+    // ==================================
+    // 특정 파일을 지정된 언어로 인식하도록 설정
+    "files.associations": {
+        "disk.h": "c",
+        "malloc.h": "c",
+        "thread.h": "c",
+        "limits.h": "c",
+        "stdbool.h": "c",
+        "tests.h": "c",
+        "*.inc": "c",
+        "lib.h": "c",
+        "inode.h": "c",
+        "interrupt.h": "c",
+        "file.h": "c",
+        "off_t.h": "c",
+        "loader.h": "c",
+        "filesys.h": "c",
+        "syscall.h": "c",
+        "synch.h": "c",
+        "mmu.h": "c",
+        "types.h": "c",
+        "gdt.h": "c",
+        "process.h": "c",
+        "flags.h": "c",
+        "vaddr.h": "c",
+        "util.h": "c",
+        "stddef.h": "c",
+        "main.h": "c",
+        "init.h": "c",
+        "functional": "c",
+        "array": "c",
+        "concepts": "c",
+        "deque": "c",
+        "string": "c",
+        "unordered_map": "c",
+        "vector": "c",
+        "memory": "c",
+        "string_view": "c",
+        "ostream": "c",
+        "streambuf": "c",
+        "tuple": "c",
+        "type_traits": "c",
+        "intr-stubs.h": "c",
+        "debug.h": "c",
+        "string.h": "c",
+        "inspect.h": "c"
+    },
+    "better-comments.tags": [
+        {
+            "tag": "#",
+            "color": "#18b566",
+            "strikethrough": false,
+            "underline": false,
+            "backgroundColor": "transparent",
+            "bold": true,
+            "italic": false
+        },
+        {
+            "tag": "!",
+            "color": "#FF2D00",
+            "strikethrough": false,
+            "underline": false,
+            "backgroundColor": "transparent",
+            "bold": false,
+            "italic": false
+        },
+        {
+            "tag": "?",
+            "color": "#3498DB",
+            "strikethrough": false,
+            "underline": false,
+            "backgroundColor": "transparent",
+            "bold": false,
+            "italic": false
+        },
+        {
+            "tag": "//",
+            "color": "#474747",
+            "strikethrough": true,
+            "underline": false,
+            "backgroundColor": "transparent",
+            "bold": false,
+            "italic": false
+        },
+        {
+            "tag": [
+                "todo",
+                "to-do"
+            ],
+            "color": "#FF8C00",
+            "strikethrough": false,
+            "underline": false,
+            "backgroundColor": "transparent",
+            "bold": false,
+            "italic": false,
+            "multiline": true
+        },
+        {
+            "tag": "*",
+            "color": "#98C379",
+            "strikethrough": false,
+            "underline": false,
+            "backgroundColor": "transparent",
+            "bold": false,
+            "italic": false
+        },
+        {
+            "tag": "bug",
+            "color": "#E84393",
+            "strikethrough": false,
+            "underline": true,
+            "backgroundColor": "#FDA7DF20",
+            "bold": true,
+            "italic": false
+        },
+        {
+            "tag": "hack",
+            "color": "#9B59B6",
+            "strikethrough": false,
+            "underline": false,
+            "backgroundColor": "#9B59B620",
+            "bold": true,
+            "italic": true
+        },
+        {
+            "tag": [
+                "fixme",
+                "fix-me",
+                "fix"
+            ],
+            "color": "#FD79A8",
+            "strikethrough": false,
+            "underline": false,
+            "backgroundColor": "#FD79A820",
+            "bold": true,
+            "italic": false
+        }
+    ],
+    "terminal.integrated.scrollback": 10000000,
+    "[cpp]": {
+        "editor.defaultFormatter": "ms-vscode.cpptools",
+        "editor.formatOnSave": true
+    },
+    "[c]": {
+        "editor.defaultFormatter": "ms-vscode.cpptools",
+        "editor.formatOnSave": true
+    },
+    "C_Cpp.clang_format_path": "/usr/bin/clang-format",
+    "C_Cpp.clang_format_style": "file",
+    "editor.formatOnSave": true,
+}
