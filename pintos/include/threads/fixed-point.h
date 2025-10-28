@@ -23,13 +23,13 @@
 #define SUB_FIXED_POINT_INT(x, n) ((x) - ((n) * F))
 
 // x * y
-#define MULT_FIXED_POINT(x, y) (((x) * (y)) / F)
+#define MULT_FIXED_POINT(x, y) (((int64_t) (x) * (y)) / F)
 
 // x * n
 #define MULT_FIXED_POINT_INT(x, n) (((x) * (n)))
 
 // x / y
-#define DIV_FIXED_POINT(x, y) (((x) * F) / (y))
+#define DIV_FIXED_POINT(x, y) (((int64_t) (x) * F) / (y))
 
 // x / n
 #define DIV_FIXED_POINT_INT(x, n) ((x) / (n))
