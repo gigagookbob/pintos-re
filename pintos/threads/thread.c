@@ -250,6 +250,16 @@ tid_t thread_create(const char *name, int priority, thread_func *function,
 
     /* Initialize thread. */
     init_thread(t, name, priority);
+
+    if (thread_mlfqs)
+    {
+        struct thread *parent = thread_current();
+        t->nice = parent->nice;
+        t->recent_cpu = parent->recent_cpu;
+
+        mlfqs_calculate_priority(t);
+    }
+
     list_push_back(&thread_current()->child_list, &t->child_elem);
     t->parent = thread_current();
     tid = t->tid = allocate_tid();
@@ -556,6 +566,25 @@ void thread_set_nice(int nice)
 {
     struct thread *current_thread = thread_current();
     current_thread->nice = nice;
+
+    if (thread_mlfqs)
+    {
+        // 새로운 NICE 값에 따라 우선순위 재계산
+        mlfqs_calculate_priority(current_thread);
+
+        if (!list_empty(&ready_list))
+        {
+            struct thread *front =
+                list_entry(list_front(&ready_list), struct thread, elem);
+
+            // 현재 실행중인 스레드의 우선순위가 더 이상 최고가 아니라면 cpu를
+            // yield한다.
+            if (front->priority > current_thread->priority)
+            {
+                thread_yield();
+            }
+        }
+    }
 }
 
 /* 현재 load_avg에 100을 곱한 값을 반올림한 정수를 반환 */

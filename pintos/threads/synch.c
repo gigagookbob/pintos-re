@@ -215,12 +215,15 @@ void lock_acquire(struct lock *lock)
 
     if (lock->holder != NULL)
     {
-        /* 현재 스레드 내 lock 정보를 등록한다 */
-        curr->wait_on_lock = lock;
-        list_insert_ordered(&lock->holder->donor_list, &curr->donor_elem,
-                            priority_large, NULL);
+        if (!thread_mlfqs)
+        {
+            /* 현재 스레드 내 lock 정보를 등록한다 */
+            curr->wait_on_lock = lock;
+            list_insert_ordered(&lock->holder->donor_list, &curr->donor_elem,
+                                priority_large, NULL);
 
-        do_donation();
+            do_donation();
+        }
     }
 
     sema_down(&lock->semaphore);
@@ -297,8 +300,11 @@ void lock_release(struct lock *lock)
 
     /* STEP: 기부받았던 priority를 복원하고 lock을 해제한다 */
 
-    lock_remove(lock);
-    restore_priority();
+    if (!thread_mlfqs)
+    {
+        lock_remove(lock);
+        restore_priority();
+    }
 
     lock->holder = NULL;
     sema_up(&lock->semaphore);
