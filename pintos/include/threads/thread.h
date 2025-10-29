@@ -116,6 +116,8 @@ struct thread
     char name[16];             /* Name (for debugging purposes). */
     int priority;              /* Priority. */
     int original_priority;     /* Origninal Priority. */
+    int nice;                  /* Nice value for MLFQS */
+    int recent_cpu;            /* Recent CPU usage for MLFQS (fixed-point) */
     int64_t wakeup_tick;
     struct list donor_list;
     struct lock *wait_on_lock; /* 현재 스레드가 어떤 lock을 대기하고 있는지에
@@ -136,6 +138,7 @@ struct thread
     struct list_elem elem; /* List element. */
     struct list_elem donor_elem;
     struct list_elem child_elem;
+    struct list_elem all_elem; /* Element in all threads list. */
 
 #ifdef USERPROG
     /* Owned by userprog/process.c. */
@@ -185,6 +188,12 @@ void thread_yield(void);
 
 int thread_get_priority(void);
 void thread_set_priority(int);
+
+void mlfqs_calculate_priority(struct thread *t);
+void mlfqs_increment_recent_cpu(void);
+void mlfqs_update_recent_cpu(void);
+void mlfqs_update_load_avg(void);
+void mlfqs_recalculate_priority_all(void);
 
 int thread_get_nice(void);
 void thread_set_nice(int);

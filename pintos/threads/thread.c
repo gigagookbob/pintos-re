@@ -7,6 +7,7 @@
 #include <string.h>
 
 #include "intrinsic.h"
+#include "threads/fixed-point.h"
 #include "threads/flags.h"
 #include "threads/interrupt.h"
 #include "threads/intr-stubs.h"
@@ -33,6 +34,8 @@ static struct list ready_list;
 
 static struct list sleep_list;
 
+static struct list all_list; /* List of all threads. */
+
 /* Idle thread. */
 static struct thread *idle_thread;
 
@@ -58,6 +61,8 @@ static unsigned thread_ticks; /* # of timer ticks since last yield. */
    If true, use multi-level feedback queue scheduler.
    Controlled by kernel command-line option "-o mlfqs". */
 bool thread_mlfqs;
+
+static int load_avg; /* System load average for MLFQS (fixed-point) */
 
 static void kernel_thread(thread_func *, void *aux);
 
@@ -112,6 +117,9 @@ void thread_init(void)
     list_init(&ready_list);
     list_init(&sleep_list);
     list_init(&destruction_req);
+    list_init(&all_list);
+
+    load_avg = 0; /* Initialize load_avg for MLFQS */
 
     /* Set up a thread structure for the running thread. */
     initial_thread = running_thread();
@@ -355,6 +363,7 @@ void thread_exit(void)
     /* Just set our status to dying and schedule another process.
        We will be destroyed during the call to schedule_tail(). */
     intr_disable();
+    list_remove(&thread_current()->all_elem);  // 여기에 추가!
     do_schedule(THREAD_DYING);
     NOT_REACHED();
 }
@@ -446,31 +455,121 @@ int thread_get_priority(void)
     return thread_current()->priority;
 }
 
-/* Sets the current thread's nice value to NICE. */
-void thread_set_nice(int nice UNUSED)
+/* Calculates and sets the priority of the given thread for MLFQS.
+ * priority = PRI_MAX - (recent_cpu / 4) - (nice * 2) */
+void mlfqs_calculate_priority(struct thread *t)
 {
-    /* TODO: Your implementation goes here */
+    int calc_result = INT_TO_FIXED_POINT(PRI_MAX) -
+                      DIV_FIXED_POINT_INT(t->recent_cpu, 4) -
+                      INT_TO_FIXED_POINT(t->nice * 2);
+
+    int new_priority = FIXED_POINT_TO_INT(calc_result);
+
+    if (new_priority < PRI_MIN) new_priority = PRI_MIN;
+    if (new_priority > PRI_MAX) new_priority = PRI_MAX;
+
+    t->priority = new_priority;
+}
+
+/* Increments recent_cpu of the current thread by 1 (called every tick).
+ * Should not be called if the idle thread is running. */
+void mlfqs_increment_recent_cpu(void)
+{
+    struct thread *current_thread = thread_current();
+
+    if (current_thread != idle_thread)
+    {
+        current_thread->recent_cpu =
+            ADD_FIXED_POINT_INT(current_thread->recent_cpu, 1);
+    }
+}
+
+/* Updates recent_cpu for all threads (called every second).
+ * recent_cpu = (2*load_avg)/(2*load_avg + 1) * recent_cpu + nice */
+void mlfqs_update_recent_cpu(void)
+{
+    struct list_elem *e;
+
+    for (e = list_begin(&all_list); e != list_end(&all_list); e = list_next(e))
+    {
+        struct thread *t = list_entry(e, struct thread, all_elem);
+
+        if (t != idle_thread)
+        {
+            int calc_result = ADD_FIXED_POINT_INT(
+                MUL_FIXED_POINT(
+                    DIV_FIXED_POINT(MUL_FIXED_POINT_INT(load_avg, 2),
+                                    ADD_FIXED_POINT_INT(
+                                        MUL_FIXED_POINT_INT(load_avg, 2), 1)),
+                    t->recent_cpu),
+                t->nice);
+
+            t->recent_cpu = calc_result;
+        }
+    }
+}
+
+/* Updates load_avg (called every second).
+ * load_avg = (59/60) * load_avg + (1/60) * ready_threads */
+void mlfqs_update_load_avg(void)
+{
+    int ready_threads = 0;
+
+    if (thread_current() != idle_thread) ready_threads++;
+
+    ready_threads += list_size(&ready_list);
+
+    int calc_result = ADD_FIXED_POINT(
+        MUL_FIXED_POINT(
+            DIV_FIXED_POINT(INT_TO_FIXED_POINT(59), INT_TO_FIXED_POINT(60)),
+            load_avg),
+        MUL_FIXED_POINT_INT(
+            DIV_FIXED_POINT(INT_TO_FIXED_POINT(1), INT_TO_FIXED_POINT(60)),
+            ready_threads));
+
+    load_avg = calc_result;
+}
+
+/* Recalculates priority for all threads (for MLFQS). */
+void mlfqs_recalculate_priority_all(void)
+{
+    struct list_elem *e;
+    for (e = list_begin(&all_list); e != list_end(&all_list); e = list_next(e))
+    {
+        struct thread *t = list_entry(e, struct thread, all_elem);
+        mlfqs_calculate_priority(t);
+    }
 }
 
 /* Returns the current thread's nice value. */
 int thread_get_nice(void)
 {
-    /* TODO: Your implementation goes here */
-    return 0;
+    return thread_current()->nice;
 }
 
-/* Returns 100 times the system load average. */
-int thread_get_load_avg(void)
+/* Sets the current thread's nice value to NICE.
+ * 새로운 NICE 값에 따라 우선순위를 다시 계산합니다.
+ * 만약 실행 중인 스레드의 우선순위가 더 이상 최고가 아니라면 cpu를 yield
+ * 합니다.
+ */
+void thread_set_nice(int nice)
 {
-    /* TODO: Your implementation goes here */
-    return 0;
+    struct thread *current_thread = thread_current();
+    current_thread->nice = nice;
+}
+
+/* 현재 load_avg에 100을 곱한 값을 반올림한 정수를 반환 */
+int thread_get_load_avg()
+{
+    return FIXED_POINT_TO_INT_NEAREST(MUL_FIXED_POINT_INT(load_avg, 100));
 }
 
 /* Returns 100 times the current thread's recent_cpu value. */
 int thread_get_recent_cpu(void)
 {
-    /* TODO: Your implementation goes here */
-    return 0;
+    struct thread *current_thread = thread_current();
+    return FIXED_POINT_TO_INT_NEAREST(
+        MUL_FIXED_POINT_INT(current_thread->recent_cpu, 100));
 }
 
 /* Idle thread.  Executes when no other thread is ready to run.
@@ -535,12 +634,15 @@ static void init_thread(struct thread *t, const char *name, int priority)
     t->tf.rsp = (uint64_t) t + PGSIZE - sizeof(void *);
     t->priority = priority;
     t->original_priority = priority;
+    t->nice = 0;
+    t->recent_cpu = 0;
     t->wait_on_lock = NULL;
     list_init(&t->donor_list);
     list_init(&t->child_list);
     sema_init(&t->fork_sema, 0);
     sema_init(&t->wait_sema, 0);
     sema_init(&t->exit_sema, 0);
+    list_push_back(&all_list, &t->all_elem);
     t->magic = THREAD_MAGIC;
 }
 
