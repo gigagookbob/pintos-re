@@ -6,3 +6,8 @@
 
  - VM은 구현이 되지 않아 있다. userprog은 dup2만 제외하곤 전부 test case가 success한다. threads 프로젝트는 mlfqs 부분은 구현되지 않았다.
  - 이에 따라 주제로 정한 지식 나눔을 준비하며 빈 부분을 구현해 나가자.
+
+# 현 시점에서의 목표 (2025/10/29)
+
+ - threads 프로젝트의 mlfqs 구현을 마쳤다.
+ - 이제 user program 프로젝트의 dup2를 구현하러 가자.
